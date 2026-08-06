@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Job Hunter AI — Agregador inteligente de empleos con matching por IA y postulación automática">
+    <title>Job Hunter AI — Terminal Noir</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- ═══════════════════════════════════════
+         SIDEBAR FIJA
+    ═══════════════════════════════════════ -->
+        <aside class="sidebar">
+
+            <!-- Branding -->
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <div class="brand-icon">🎯</div>
+                    <div>
+                        <div class="brand-name">Job Hunter AI</div>
+                    </div>
+                </div>
+                <div class="brand-tag">v2.0 · Terminal Noir</div>
+            </div>
+
+            <!-- Nav principal -->
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">// workspace</div>
+
+                <button class="nav-item active" data-tab="jobs-tab">
+                    <span class="nav-icon">💼</span>
+                    Empleos &amp; Feed
+                    <span class="nav-badge" id="nav-badge-jobs">0</span>
+                </button>
+
+                <button class="nav-item" data-tab="search-configs-tab">
+                    <span class="nav-icon">⚙️</span>
+                    Búsquedas
+                </button>
+
+                <button class="nav-item" data-tab="profile-tab">
+                    <span class="nav-icon">📄</span>
+                    Mi CV &amp; Perfil
+                </button>
+
+                <div class="nav-section-label">// automatización</div>
+
+                <button class="nav-item" data-tab="auto-apply-tab">
+                    <span class="nav-icon">⚡</span>
+                    Auto-Apply
+                </button>
+
+                <button class="nav-item" data-tab="crm-tab">
+                    <span class="nav-icon">📋</span>
+                    CRM / Kanban
+                </button>
+
+                <div class="nav-section-label">// inteligencia</div>
+
+                <button class="nav-item" data-tab="chat-tab">
+                    <span class="nav-icon">💬</span>
+                    Chat IA
+                </button>
+
+                <button class="nav-item" data-tab="analytics-tab">
+                    <span class="nav-icon">📊</span>
+                    Analítica
+                </button>
+
+                <div class="nav-section-label">// sistema</div>
+
+                <button class="nav-item" id="btn-open-config">
+                    <span class="nav-icon">⚙️</span>
+                    Configuración API
+                </button>
+            </nav>
+
+            <!-- Acciones rápidas en el footer del sidebar -->
+            <div class="sidebar-footer">
+                <button id="btn-trigger-scrape" class="sidebar-action-btn">
+                    🔄 Scrapear Ofertas
+                </button>
+                <button id="btn-trigger-ai" class="sidebar-action-btn primary">
+                    🧠 Analizar con IA
+                </button>
+                <button id="btn-trigger-notify" class="sidebar-action-btn accent">
+                    🔔 Enviar Alertas
+                </button>
+            </div>
+
+        </aside>
+
+        <!-- ═══════════════════════════════════════
+         CONTENIDO PRINCIPAL
+    ═══════════════════════════════════════ -->
+        <main class="main-content">
+
+            <!-- Top bar contextual -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <div class="topbar-title" id="topbar-current-title">Empleos &amp; Feed</div>
+                    <div class="topbar-subtitle" id="topbar-current-sub">// cargando datos...</div>
+                </div>
+                <div class="topbar-actions">
+                    <div style="display:flex; gap:16px; font-family:'JetBrains Mono',monospace; font-size:0.78rem;">
+                        <span style="color:var(--text-3);">total <strong style="color:var(--green)"
+                                id="stat-total-jobs">0</strong></span>
+                        <span style="color:var(--text-3);">remotos <strong style="color:var(--sky)"
+                                id="stat-remote-jobs">0</strong></span>
+                        <span style="color:var(--text-3);">alto match <strong style="color:var(--amber)"
+                                id="stat-high-match">0</strong></span>
+                        <span style="color:var(--text-3);">fuentes <strong style="color:var(--purple)"
+                                id="stat-sources">3</strong></span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ════════════════════════════
+             PESTAÑA 1: Empleos & Feed
+        ════════════════════════════ -->
+            <div id="jobs-tab" class="tab-content active">
+
+                <!-- KPI bar -->
+                <div class="stats-grid">
+                    <div class="stat-card green">
+                        <div class="stat-icon green">💼</div>
+                        <div class="stat-body">
+                            <span class="stat-label">Total Ofertas</span>
+                            <div class="stat-value" id="kpi-total-jobs">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card sky">
+                        <div class="stat-icon sky">🏠</div>
+                        <div class="stat-body">
+                            <span class="stat-label">Remotos</span>
+                            <div class="stat-value" id="kpi-remote-jobs">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card amber">
+                        <div class="stat-icon amber">⭐</div>
+                        <div class="stat-body">
+                            <span class="stat-label">Alto Match ≥80%</span>
+                            <div class="stat-value" id="kpi-high-match">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card coral">
+                        <div class="stat-icon coral">🌐</div>
+                        <div class="stat-body">
+                            <span class="stat-label">Fuentes</span>
+                            <div class="stat-value">3</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <span class="search-icon-inner">🔍</span>
+                        <input type="text" id="input-search" class="search-input"
+                            placeholder="Buscar por título, empresa, tecnología, pasantía...">
+                    </div>
+                    <select id="select-seniority" class="filter-select">
+                        <option value="">Todo Seniority</option>
+                        <option value="Trainee">Trainee / Pasantía</option>
+                        <option value="Junior">Junior</option>
+                        <option value="Semi-Senior">Semi-Senior</option>
+                        <option value="Senior">Senior</option>
+                    </select>
+                    <select id="select-source" class="filter-select">
+                        <option value="">Todas las Fuentes</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="bumeran">Bumeran</option>
+                        <option value="computrabajo">Computrabajo</option>
+                    </select>
+                    <select id="filter-date-feed" class="filter-select">
+                        <option value="all">Todas las fechas</option>
+                        <option value="today">Hoy (Últimas 24h)</option>
+                        <option value="week">Esta semana (Últimos 7 días)</option>
+                    </select>
+                    <label class="filter-checkbox-label">
+                        <input type="checkbox" id="check-remote"> Solo Remotos 🏠
+                    </label>
+                    <div class="score-filter">
+                        <span>Match ≥ <strong id="score-val">0%</strong></span>
+                        <input type="range" id="range-score" min="0" max="100" value="0">
+                    </div>
+                </div>
+
+                <!-- Header conteo + paginación info -->
+                <div class="jobs-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="jobs-count-label">
+                            <strong id="jobs-count">0</strong> ofertas encontradas
+                        </div>
+                        <div class="jobs-count-label" id="pagination-info">Página 1</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearFeed()"
+                        style="border-color: var(--coral); color: var(--coral);">🗑️ Borrar Búsquedas</button>
+                </div>
+
+                <!-- Grid de tarjetas -->
+                <div id="jobs-grid" class="jobs-grid">
+                    <!-- Renderizado dinámico -->
+                </div>
+
+                <!-- Paginación -->
+                <div class="pagination">
+                    <button id="btn-prev-page" class="btn btn-secondary" disabled>← Anterior</button>
+                    <span class="page-info" id="page-indicator">Página 1</span>
+                    <button id="btn-next-page" class="btn btn-secondary" disabled>Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════
+             PESTAÑA 2: Búsquedas
+        ════════════════════════════ -->
+            <div id="search-configs-tab" class="tab-content">
+                <div class="panel mb-24">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">⚙️ Configurar Búsquedas</div>
+                            <div class="section-desc">Define búsquedas guardadas por rol, tecnología o tipo (pasantía,
+                                jóvenes profesionales, etc.)</div>
+                        </div>
+                    </div>
+
+                    <form id="form-search-config" style="display:flex; flex-direction:column; gap:16px;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Nombre de la búsqueda</label>
+                                <input type="text" id="config-name" class="form-input"
+                                    placeholder="Ej: Pasantías Python · Jóvenes Profesionales" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ubicación</label>
+                                <input type="text" id="config-location" class="form-input"
+                                    placeholder="Buenos Aires / Remoto">
+                            </div>
+                            <div class="form-group full">
+                                <label class="form-label">Palabras clave (separadas por coma)</label>
+                                <input type="text" id="config-keywords" class="form-input"
+                                    placeholder="pasantía, trainee, junior python, jóvenes profesionales" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Portales activos</label>
+                                <div class="form-checkbox-row">
+                                    <label class="form-checkbox-label"><input type="checkbox" name="source-opt"
+                                            value="linkedin" checked> LinkedIn</label>
+                                    <label class="form-checkbox-label"><input type="checkbox" name="source-opt"
+                                            value="bumeran" checked> Bumeran</label>
+                                    <label class="form-checkbox-label"><input type="checkbox" name="source-opt"
+                                            value="computrabajo" checked> Computrabajo</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Opciones</label>
+                                <div class="form-checkbox-row">
+                                    <label class="form-checkbox-label"><input type="checkbox" id="config-remote-only">
+                                        Solo Remoto 🏠</label>
+                                </div>
+                                <div style="margin-top: 8px;">
+                                    <select id="config-date-filter" class="form-input"
+                                        style="padding: 6px; font-size: 0.85rem;">
+                                        <option value="all">Todas las fechas (Por defecto)</option>
+                                        <option value="today">De Hoy (Últimas 24h)</option>
+                                        <option value="week">De esta semana (Últimos 7 días)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="submit" class="btn btn-primary">+ Guardar Búsqueda</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div>
+                    <div class="section-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="section-title">Búsquedas guardadas</div>
+                        <button class="btn btn-secondary btn-sm" onclick="resetAllSearches()"
+                            style="border-color: var(--coral); color: var(--coral);">🗑️ Resetear Todas</button>
+                    </div>
+                    <div id="search-configs-list" class="configs-grid">
+                        <!-- Renderizado dinámico -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════
+             PESTAÑA 3: Perfil / CV
+        ════════════════════════════ -->
+            <div id="profile-tab" class="tab-content">
+                <div class="profile-layout">
+                    <!-- Columna izquierda: Upload -->
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div class="cv-dropzone" onclick="document.getElementById('cv-file-input').click()">
+                            <div class="cv-dropzone-icon">📁</div>
+                            <div class="cv-dropzone-title">Cargar / Actualizar CV</div>
+                            <div class="cv-dropzone-formats">PDF · DOCX · TXT</div>
+                            <input type="file" id="cv-file-input" accept=".pdf,.docx,.doc,.txt" style="display:none">
+                            <button type="button" class="btn btn-primary"
+                                onclick="event.stopPropagation(); document.getElementById('cv-file-input').click()">
+                                📤 Seleccionar Archivo
+                            </button>
+                            <div id="cv-file-status" class="cv-status">Sin archivo seleccionado</div>
+                        </div>
+
+                        <div class="panel" style="padding:16px;">
+                            <div class="section-title" style="font-size:0.85rem; margin-bottom:12px;">🧠 Skills
+                                detectadas</div>
+                            <div id="cv-skills-tags" class="skills-cloud">
+                                <span class="text-muted" style="font-size:0.8rem;">Sube tu CV para detectar
+                                    habilidades</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna derecha: Formulario -->
+                    <div class="panel">
+                        <div class="section-header">
+                            <div>
+                                <div class="section-title">📄 Datos del Perfil</div>
+                                <div class="section-desc">Esta información se usa para postulaciones automáticas</div>
+                            </div>
+                        </div>
+                        <form id="form-user-profile" style="display:flex; flex-direction:column; gap:16px;">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Nombre completo</label>
+                                    <input type="text" id="prof-name" class="form-input" placeholder="Tu nombre">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" id="prof-email" class="form-input"
+                                        placeholder="correo@ejemplo.com">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Teléfono / WhatsApp</label>
+                                    <input type="text" id="prof-phone" class="form-input" placeholder="+54 9 11...">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">LinkedIn URL</label>
+                                    <input type="text" id="prof-linkedin" class="form-input"
+                                        placeholder="linkedin.com/in/tu-perfil">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">📝 Texto extraído del CV (usado por la IA para
+                                    matching)</label>
+                                <textarea id="prof-cv-text" class="form-textarea" rows="14"
+                                    placeholder="Sube tu CV en PDF/DOCX y el texto aparecerá aquí, o pégalo manualmente..."></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary btn-lg">💾 Guardar Perfil</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════
+             PESTAÑA 4: Auto-Apply
+        ════════════════════════════ -->
+            <div id="auto-apply-tab" class="tab-content">
+                <div class="apply-config-box">
+                    <div>
+                        <div class="apply-config-title">⚡ Postulación Masiva por IA</div>
+                        <div class="apply-config-desc">Postula automáticamente a empleos con Match IA superior al umbral
+                            configurado</div>
+                    </div>
+                    <div class="apply-controls">
+                        <div class="apply-score-label">
+                            <span>Score mínimo: <strong class="text-green" id="batch-score-val">80%</strong></span>
+                            <input type="range" id="batch-min-score" min="50" max="100" value="80" style="width:140px;">
+                        </div>
+                        <label class="form-checkbox-label">
+                            <input type="checkbox" id="batch-dry-run" checked>
+                            Modo simulación (Dry-Run)
+                        </label>
+                        <button id="btn-run-batch-apply" class="btn btn-primary btn-lg">
+                            ⚡ Ejecutar Auto-Apply
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <div class="section-title">📋 Historial de Postulaciones</div>
+                </div>
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Puesto</th>
+                                <th>Empresa</th>
+                                <th>Fuente</th>
+                                <th>Estado</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apply-logs-body">
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding:24px; color:var(--text-3);">Cargando
+                                    historial...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════
+             PESTAÑA 5: CRM / Kanban
+        ════════════════════════════ -->
+            <div id="crm-tab" class="tab-content">
+                <!-- Stats rápidas -->
+                <div class="crm-stats-row">
+                    <div class="crm-stat-pill">
+                        <span class="pill-icon">📩</span>
+                        <span>Postulados</span>
+                        <strong id="crm-count-postulado">-</strong>
+                    </div>
+                    <div class="crm-stat-pill">
+                        <span class="pill-icon">💻</span>
+                        <span>Entrevistas</span>
+                        <strong id="crm-count-entrevista">-</strong>
+                    </div>
+                    <div class="crm-stat-pill">
+                        <span class="pill-icon">🎉</span>
+                        <span>Ofertas</span>
+                        <strong id="crm-count-oferta">-</strong>
+                    </div>
+                    <div class="crm-stat-pill success">
+                        <span class="pill-icon">✅</span>
+                        <span>Aceptados</span>
+                        <strong id="crm-count-aceptado">-</strong>
+                    </div>
+                </div>
+
+                <div id="kanban-board" class="kanban-grid">
+                    <!-- Generado dinámicamente -->
+                </div>
+            </div>
+
+            <!-- ════════════════════════════
+             PESTAÑA 6: Chat IA
+        ════════════════════════════ -->
+            <div id="chat-tab" class="tab-content">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">💬 Asistente de Carrera con IA</div>
+                        <div class="section-desc">Pregunta en lenguaje natural sobre empleos, tu perfil, salarios o qué
+                            aprender</div>
+                    </div>
+                </div>
+
+                <div class="chat-suggestions">
+                    <button class="suggestion-chip"
+                        onclick="askChatQuestion('¿Qué pasantías con Python aparecieron hoy?')">🐍 Pasantías
+                        Python</button>
+                    <button class="suggestion-chip"
+                        onclick="askChatQuestion('¿Qué empleos remotos tienen mejor match con mi CV?')">🏠 Remotos con
+                        alto match</button>
+                    <button class="suggestion-chip"
+                        onclick="askChatQuestion('¿Qué tecnologías debería aprender para mejorar mi perfil?')">🚀 Qué
+                        tecnologías aprender</button>
+                    <button class="suggestion-chip"
+                        onclick="askChatQuestion('¿Cuántos empleos tengo con más del 80% de coincidencia?')">⭐ Ver
+                        empleos alto match</button>
+                </div>
+
+                <div class="chat-shell">
+                    <div class="chat-topbar">
+                        <div class="chat-dot green"></div>
+                        <div class="chat-dot amber"></div>
+                        <div class="chat-dot coral"></div>
+                        <span class="chat-topbar-title">job-hunter-ai · chat session</span>
+                    </div>
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-msg bot">
+                            🤖 <strong>¡Hola! Soy tu Asistente de Carrera.</strong><br><br>
+                            Puedo ayudarte a:<br>
+                            📊 Analizar qué ofertas coinciden con tu perfil<br>
+                            🎯 Recomendarte qué habilidades mejorar<br>
+                            🔍 Buscar pasantías, empleos remotos o jóvenes profesionales<br><br>
+                            <em>Seleccioná una sugerencia de arriba o escribí tu pregunta 👆</em>
+                        </div>
+                    </div>
+                    <form id="chat-form" class="chat-input-area">
+                        <input type="text" id="chat-input" class="chat-input-field"
+                            placeholder="¿Qué pasantías de Python aparecieron esta semana?" required autocomplete="off">
+                        <button type="submit" class="btn btn-primary">↑ Enviar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ════════════════════════════
+             PESTAÑA 7: Analítica
+        ════════════════════════════ -->
+            <div id="analytics-tab" class="tab-content">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">📊 Dashboard &amp; Admin</div>
+                        <div class="section-desc">Métricas del mercado tech, tendencias de tecnologías y salud de los
+                            scrapers</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="window.loadAnalyticsTab()">🔄 Actualizar</button>
+                </div>
+
+                <!-- KPI cards -->
+                <div class="analytics-kpi-grid">
+                    <div class="analytics-kpi-card">
+                        <div class="kpi-icon" style="background:rgba(0,255,163,0.1); color:var(--green);">📈</div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Match Promedio</span>
+                            <strong id="kpi-avg-match" class="kpi-value">—</strong>
+                        </div>
+                    </div>
+                    <div class="analytics-kpi-card">
+                        <div class="kpi-icon" style="background:rgba(56,189,248,0.1); color:var(--sky);">🏠</div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">% Remotos</span>
+                            <strong id="kpi-remote-pct" class="kpi-value">—</strong>
+                        </div>
+                    </div>
+                    <div class="analytics-kpi-card">
+                        <div class="kpi-icon" style="background:rgba(255,179,71,0.1); color:var(--amber);">⭐</div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Alto Match ≥80%</span>
+                            <strong id="kpi-high-match-count" class="kpi-value">—</strong>
+                        </div>
+                    </div>
+                    <div class="analytics-kpi-card">
+                        <div class="kpi-icon" style="background:rgba(167,139,250,0.1); color:var(--purple);">🔍</div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Fuentes Activas</span>
+                            <strong id="kpi-sources-count" class="kpi-value">—</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts panels -->
+                <div class="analytics-panels-grid">
+                    <div class="analytics-panel">
+                        <div class="analytics-panel-title">🔥 Top tecnologías demandadas</div>
+                        <div id="analytics-tech-list" class="analytics-tech-bars">
+                            <span class="text-muted" style="font-size:0.82rem;">Cargando datos...</span>
+                        </div>
+                    </div>
+                    <div class="analytics-panel">
+                        <div class="analytics-panel-title">🌐 Distribución por portal</div>
+                        <div id="analytics-sources-list" class="analytics-sources-bars">
+                            <span class="text-muted" style="font-size:0.82rem;">Cargando datos...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado scrapers -->
+                <div class="section-header mb-16">
+                    <div class="section-title" style="font-size:0.9rem;">⚙️ Salud de Scrapers</div>
+                </div>
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Scraper</th>
+                                <th>Estado</th>
+                                <th>Última ejecución</th>
+                                <th>Encontrados</th>
+                                <th>Agregados</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scrapers-status-body">
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding:20px; color:var(--text-3);">
+                                    Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main><!-- /main-content -->
+
+    </div><!-- /app-container -->
+
+    <!-- ═══════════════════════════════════════
+     MODAL — Detalle de oferta
+═══════════════════════════════════════ -->
+    <div id="job-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header-bar">
+                <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                    <div id="modal-badges" style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <span id="modal-source" class="badge badge-source">LinkedIn</span>
+                        <span id="modal-remote" class="badge badge-remote">Remoto</span>
+                        <span id="modal-seniority" class="badge badge-seniority">Senior</span>
+                    </div>
+                    <h2 id="modal-title"
+                        style="font-size:1.15rem; font-weight:700; color:var(--text-1); letter-spacing:-0.02em;">Título
+                        de la Oferta</h2>
+                    <div id="modal-company" style="font-size:0.85rem; color:var(--text-3);">Empresa — Ubicación</div>
+                </div>
+                <button id="modal-close" class="modal-close-btn">✕</button>
+            </div>
+
+            <div class="modal-body-area">
+                <!-- Score IA -->
+                <div class="ai-score-row">
+                    <div class="score-ring" id="modal-score-circle">
+                        <span id="modal-score-val">—%</span>
+                    </div>
+                    <div>
+                        <div class="modal-section-title">Coincidencia IA con tu CV</div>
+                        <div id="modal-score-reasoning"
+                            style="font-size:0.84rem; color:var(--text-2); line-height:1.5;">Cargando análisis...</div>
+                    </div>
+                </div>
+
+                <!-- Resumen IA -->
+                <div>
+                    <div class="modal-section-title">💡 Resumen generado por IA</div>
+                    <p id="modal-summary" style="font-size:0.85rem; color:var(--text-2); line-height:1.6;">Procesando...
+                    </p>
+                </div>
+
+                <!-- Ventajas / faltantes -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <div class="modal-section-title">✔ Coincidencias</div>
+                        <div id="modal-advantages" class="tech-tags"></div>
+                    </div>
+                    <div>
+                        <div class="modal-section-title">• Te falta</div>
+                        <div id="modal-missing" class="tech-tags"></div>
+                    </div>
+                </div>
+
+                <!-- Probabilidad -->
+                <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                    <div>
+                        <div class="modal-section-title">Probabilidad de entrevista</div>
+                        <strong id="modal-interview-prob" class="text-green" style="font-size:1rem;">—</strong>
+                    </div>
+                    <div>
+                        <div class="modal-section-title">Recomendación</div>
+                        <strong id="modal-recommendation" style="font-size:1rem; color:var(--sky);">—</strong>
+                    </div>
+                </div>
+
+                <!-- Stack requerido -->
+                <div>
+                    <div class="modal-section-title">🛠️ Stack requerido</div>
+                    <div id="modal-techs" class="tech-tags"></div>
+                </div>
+
+                <!-- Descripción completa -->
+                <div>
+                    <div class="modal-section-title">📄 Descripción completa</div>
+                    <div id="modal-description" class="desc-block"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer-bar">
+                <button id="modal-gen-cv-btn" class="btn btn-secondary">📄 CV Adaptado</button>
+                <button id="modal-gen-cover-btn" class="btn btn-secondary">✉️ Carta Presentación</button>
+                <button id="modal-auto-apply-btn" class="btn btn-primary">⚡ Postularse</button>
+                <a id="modal-url-btn" href="#" target="_blank" class="btn btn-outline">🔗 Ver Original</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+     MODAL — Visor de documentos generados
+═══════════════════════════════════════ -->
+    <div id="doc-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="max-width:800px;">
+            <div class="modal-header-bar">
+                <h2 id="doc-modal-title" style="font-size:1rem; font-weight:700; color:var(--text-1);">Documento
+                    Generado</h2>
+                <button id="doc-modal-close" class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body-area">
+                <textarea id="doc-modal-text" rows="20" readonly
+                    style="width:100%; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-1); padding:14px; font-family:'JetBrains Mono',monospace; font-size:0.82rem; line-height:1.6; resize:vertical; outline:none;">
+            </textarea>
+            </div>
+            <div class="modal-footer-bar">
+                <button id="doc-modal-copy-btn" class="btn btn-primary">📋 Copiar al portapapeles</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+     MODAL — Configuración Sistema
+═══════════════════════════════════════ -->
+    <div id="sys-config-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="max-width:600px;">
+            <div class="modal-header-bar">
+                <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-1);">⚙️ Configuración del Sistema</h2>
+                <button id="sys-config-close" class="modal-close-btn">✕</button>
+            </div>
+            <div class="modal-body-area">
+                <form id="form-sys-config" style="display:flex; flex-direction:column; gap:16px;">
+                    <div class="form-group">
+                        <label class="form-label">Proveedor de Inteligencia Artificial (AI_PROVIDER)</label>
+                        <select id="config-ai-provider" class="form-input">
+                            <option value="openai">OpenAI (Recomendado)</option>
+                            <option value="groq">Groq (Rápido)</option>
+                            <option value="anthropic">Anthropic (Claude)</option>
+                            <option value="ollama">Ollama (Local)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label class="form-label">OpenAI API Key</label>
+                            <input type="password" id="config-openai-key" class="form-input" placeholder="sk-...">
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">Groq API Key</label>
+                            <input type="password" id="config-groq-key" class="form-input" placeholder="gsk_...">
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">Anthropic API Key</label>
+                            <input type="password" id="config-anthropic-key" class="form-input" placeholder="sk-ant-...">
+                        </div>
+                    </div>
+                    
+                    <hr style="border:none; border-top:1px solid var(--border); margin:8px 0;">
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Telegram Bot Token</label>
+                            <input type="password" id="config-telegram-token" class="form-input" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telegram Chat ID</label>
+                            <input type="text" id="config-telegram-chat" class="form-input" placeholder="123456789">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 12px;">
+                        <button type="button" id="sys-config-cancel" class="btn btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de notificaciones -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message">Mensaje</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js?v=2"></script>
+
+</body>
+
+</html>
