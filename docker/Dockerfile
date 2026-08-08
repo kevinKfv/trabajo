@@ -17,10 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Instalar navegadores de Playwright y sus dependencias de sistema
 RUN playwright install chromium --with-deps
 
-# Copiar código fuente de la aplicación
+# Copiar código fuente y script de inicio
 COPY . .
+RUN chmod +x start.sh
 
-# Exponer el puerto 8080 para Railway
-EXPOSE 8080
-
-CMD uvicorn app.main:app --host 0.0.0.0 --port 8080
+# Railway inyectará la variable de entorno PORT automáticamente
+CMD ["./start.sh"]
