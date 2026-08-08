@@ -20,4 +20,7 @@ RUN playwright install chromium --with-deps
 # Copiar código fuente de la aplicación
 COPY . .
 
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Exponer el puerto 8080 para Railway
+EXPOSE 8080
+
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8080
