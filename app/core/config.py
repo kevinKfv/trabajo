@@ -1,5 +1,4 @@
-from typing import Literal
-from pydantic import computed_field
+from pydantic import computed_field, Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,12 +15,12 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # PostgreSQL
-    POSTGRES_SERVER: str = "localhost"
-    POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "postgres"
-    POSTGRES_DB: str = "job_hunter_db"
+    # PostgreSQL (con soporte nativo para Railway y otros PAAS)
+    POSTGRES_SERVER: str = Field(default="localhost", validation_alias=AliasChoices('POSTGRES_SERVER', 'PGHOST', 'POSTGRES_HOST'))
+    POSTGRES_PORT: int = Field(default=5432, validation_alias=AliasChoices('POSTGRES_PORT', 'PGPORT'))
+    POSTGRES_USER: str = Field(default="postgres", validation_alias=AliasChoices('POSTGRES_USER', 'PGUSER'))
+    POSTGRES_PASSWORD: str = Field(default="postgres", validation_alias=AliasChoices('POSTGRES_PASSWORD', 'PGPASSWORD'))
+    POSTGRES_DB: str = Field(default="job_hunter_db", validation_alias=AliasChoices('POSTGRES_DB', 'PGDATABASE'))
 
     @computed_field
     @property
