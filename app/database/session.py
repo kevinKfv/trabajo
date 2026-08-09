@@ -12,7 +12,7 @@ from app.core.logging import logger
 # Motor de base de datos asíncrono SQLAlchemy
 engine = create_async_engine(
     settings.ASYNC_DATABASE_URI,
-    echo=settings.DEBUG,
+    echo=False, # settings.DEBUG by default logs all SQL queries, disable it for cleaner console
     future=True,
     pool_pre_ping=True
 )
