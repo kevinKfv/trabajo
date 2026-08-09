@@ -63,46 +63,17 @@ class ChatAssistantService:
                 user_prompt=user_prompt
             )
 
-            # Para todas las consultas sobre empleos o lista de ofertas, adjuntar datos estructurados para renderizar botones de postulación
-            suggested_jobs = [
-                {
-                    "id": j.id,
-                    "title": j.title,
-                    "company": j.company,
-                    "location": j.location or "Remoto",
-                    "url": j.url,
-                    "source": j.source,
-                    "ai_score": j.ai_score,
-                    "remote": j.remote,
-                    "seniority": j.seniority or "N/A"
-                }
-                for j in jobs[:6]
-            ]
-
             return {
                 "query": query,
                 "answer": answer_text,
-                "suggested_jobs": suggested_jobs
+                "suggested_jobs": []
             }
 
         except Exception as e:
             logger.error(f"Error en Chat Assistant: {e}", exc_info=True)
             return {
                 "query": query,
-                "answer": f"🤖 Encontré **{len(jobs)} ofertas** registradas en el sistema. Puedes explorarlas a continuación o en la pestaña 'Empleos & Feed'.",
-                "suggested_jobs": [
-                    {
-                        "id": j.id,
-                        "title": j.title,
-                        "company": j.company,
-                        "location": j.location or "Remoto",
-                        "url": j.url,
-                        "source": j.source,
-                        "ai_score": j.ai_score,
-                        "remote": j.remote,
-                        "seniority": j.seniority or "N/A"
-                    }
-                    for j in jobs[:3]
-                ]
+                "answer": f"🤖 Encontré **{len(jobs)} ofertas** registradas en el sistema. Puedes explorarlas en la pestaña 'Empleos & Feed'.",
+                "suggested_jobs": []
             }
 

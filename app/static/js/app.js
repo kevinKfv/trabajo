@@ -938,31 +938,6 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/\n/g, "<br>");
     }
 
-    function renderChatSuggestedJobs(jobs) {
-        if (!jobs || jobs.length === 0) return "";
-        let cardsHtml = jobs.map(j => {
-            const score = j.ai_score !== null && j.ai_score !== undefined ? Math.round(j.ai_score) : null;
-            let matchPill = score !== null ? `<span class="match-pill match-high" style="font-size:0.75rem; padding:2px 6px;">★ ${score}%</span>` : "";
-            return `
-                <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; margin-top: 8px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <strong style="color:#f8fafc; font-size:0.9rem;">${j.title}</strong>
-                        ${matchPill}
-                    </div>
-                    <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:8px;">
-                        🏢 ${j.company} · 📍 ${j.location} · <span class="badge badge-source">${(j.source || '').toUpperCase()}</span>
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn btn-primary btn-sm" style="font-size:0.75rem; padding:4px 10px;" onclick="window.open('${j.url}', '_blank')">⚡ Postularme</button>
-                        <button class="btn btn-secondary btn-sm" style="font-size:0.75rem; padding:4px 10px;" onclick="openJobDetail(${j.id})">🔍 Detalle</button>
-                    </div>
-                </div>
-            `;
-        }).join("");
-
-        return `<div style="margin-top:12px;"><div style="font-weight:600; font-size:0.85rem; margin-bottom:6px; color:#38bdf8;">📌 Ofertas disponibles para postularte:</div>${cardsHtml}</div>`;
-    }
-
     if (chatForm) {
         chatForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -988,9 +963,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await res.json();
                 
                 let answerHtml = formatMarkdown(data.answer || 'Sin respuesta.');
-                if (data.suggested_jobs && data.suggested_jobs.length > 0) {
-                    answerHtml += renderChatSuggestedJobs(data.suggested_jobs);
-                }
 
                 document.getElementById(loaderId).outerHTML = `<div class="chat-msg bot">🤖 ${answerHtml}</div>`;
                 chatMessages.scrollTop = chatMessages.scrollHeight;
