@@ -9,7 +9,7 @@ class OpenAIProvider(BaseAIProvider):
     """Proveedor de IA para analizar ofertas utilizando la API de OpenAI o Groq (compatible con OpenAI)."""
 
     def __init__(self, api_key: str = "", model: str = "", base_url: str = "") -> None:
-        self.api_key = api_key or settings.OPENAI_API_KEY
+        self.api_key = api_key or settings.OPENAI_API_KEY or settings.GROQ_API_KEY
         self.model = model or settings.AI_MODEL
         
         # Detección automática de Groq o URL personalizada
@@ -17,7 +17,7 @@ class OpenAIProvider(BaseAIProvider):
         if custom_url:
             base = custom_url.rstrip("/")
             self.endpoint = f"{base}/chat/completions" if not base.endswith("/chat/completions") else base
-        elif self.api_key.startswith("gsk_") or settings.AI_PROVIDER.lower() == "groq":
+        elif self.api_key.startswith("gsk_") or settings.AI_PROVIDER.lower() == "groq" or (not settings.OPENAI_API_KEY and settings.GROQ_API_KEY):
             self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
             if self.model in ("gpt-4o-mini", "gpt-4o", ""):
                 self.model = "llama-3.3-70b-versatile"
