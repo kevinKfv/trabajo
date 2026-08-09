@@ -37,21 +37,45 @@ class OpenAIProvider(BaseAIProvider):
             )
 
         system_prompt = (
-            "Eres un experto en reclutamiento técnico e IA. Tu tarea es analizar una oferta laboral "
-            "y compararla con el CV del candidato. Debes responder EXCLUSIVAMENTE en formato JSON "
-            "con las siguientes claves exactas:\n"
-            "- 'summary': (string) Resumen conciso de 2 oraciones sobre el puesto.\n"
-            "- 'technologies': (lista de strings) Tecnologías principales requeridas.\n"
-            "- 'seniority': (string) Nivel detectado (Junior, Semi-Senior, Senior, Lead).\n"
-            "- 'match_score': (float 0-100) Grado de compatibilidad con el CV.\n"
-            "- 'reasoning': (string) Explicación de las coincidencias y brechas.\n"
-            "- 'advantages': (lista de strings) Habilidades que el candidato posee y coinciden con la oferta.\n"
-            "- 'missing_skills': (lista de strings) Requisitos clave que el candidato no tiene.\n"
-            "- 'interview_probability': (string) Probabilidad de entrevista (Alta, Media, Baja).\n"
-            "- 'recommendation': (string) Recomendación sobre si aplicar ('Aplicar inmediatamente', 'Revisar requisitos', 'Descartar')."
+            "Eres un experto senior en reclutamiento técnico especializado en el mercado IT de Argentina y Latinoamérica. "
+            "Analizas ofertas laborales del sector tecnológico (software, datos, DevOps, diseño UX, etc.) "
+            "y evalúas la compatibilidad de candidatos con dichas ofertas de forma objetiva y precisa.\n\n"
+            "Tu tarea es analizar una oferta laboral y compararla con el CV del candidato. "
+            "Debes responder EXCLUSIVAMENTE en formato JSON válido con las siguientes claves exactas:\n\n"
+            "- 'summary': (string) Resumen conciso de 2-3 oraciones sobre el puesto: qué hace, stack principal y tipo de empresa.\n"
+            "- 'technologies': (lista de strings) Tecnologías, frameworks, herramientas y metodologías requeridas o mencionadas. "
+            "Incluye lenguajes de programación, bases de datos, cloud, herramientas de CI/CD, etc.\n"
+            "- 'seniority': (string) Nivel detectado: 'Trainee', 'Junior', 'Semi-Senior', 'Senior' o 'Lead/Manager'. "
+            "Infiere el nivel según años de experiencia requeridos, complejidad de tareas y tecnologías solicitadas. "
+            "Si dice 'pasantía' o 'practicante', usa 'Trainee'.\n"
+            "- 'match_score': (float 0-100) Puntuación de compatibilidad calculada así: "
+            "70% basado en coincidencia de habilidades técnicas hard (lenguajes, frameworks, herramientas), "
+            "20% basado en experiencia/nivel requerido vs. perfil del candidato, "
+            "10% basado en habilidades blandas y otras coincidencias. "
+            "Sé estricto: si faltan habilidades críticas (las primeras mencionadas en la oferta), baja el score significativamente. "
+            "Un score de 80+ significa que el candidato cumple casi todos los requisitos. "
+            "Un score de 50-79 significa que cumple los básicos pero le faltan cosas importantes. "
+            "Un score menor a 50 significa que hay brechas críticas.\n"
+            "- 'reasoning': (string) Explicación detallada en español de 3-5 oraciones: qué habilidades coinciden, "
+            "qué le falta al candidato, y por qué tiene ese score. Sé específico y útil.\n"
+            "- 'advantages': (lista de strings) Skills, tecnologías o experiencias concretas del candidato que coinciden con la oferta. "
+            "Lista cada item por separado, máximo 8 items.\n"
+            "- 'missing_skills': (lista de strings) Requisitos clave de la oferta que el candidato NO tiene en su CV. "
+            "Ordénalos de más crítico a menos crítico. Máximo 6 items.\n"
+            "- 'interview_probability': (string) 'Alta' si score >= 75, 'Media' si score >= 50, 'Baja' si score < 50.\n"
+            "- 'recommendation': (string) Una de estas tres opciones según el score: "
+            "'Aplicar inmediatamente' (score >= 75), 'Revisar requisitos antes de aplicar' (score 50-74), 'Probablemente no apto' (score < 50).\n\n"
+            "IMPORTANTE: Si el CV está vacío o es muy corto (menos de 100 caracteres), asigna un match_score de 0 "
+            "y recommendation 'Completar perfil CV primero'. "
+            "Responde SOLO con el JSON, sin texto adicional, sin markdown."
         )
 
-        user_prompt = f"CV DEL CANDIDATO:\n{cv_text}\n\nOFERTA LABORAL:\n{job_description}"
+        user_prompt = (
+            f"Analiza la siguiente oferta laboral y compárala con el CV del candidato.\n\n"
+            f"=== CV DEL CANDIDATO ===\n{cv_text or '(CV vacío — el candidato no ha cargado su CV aún)'}\n\n"
+            f"=== OFERTA LABORAL ===\n{job_description}\n\n"
+            f"Recuerda: responde EXCLUSIVAMENTE con JSON válido."
+        )
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",

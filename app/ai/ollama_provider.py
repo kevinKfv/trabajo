@@ -15,22 +15,29 @@ class OllamaProvider(BaseAIProvider):
 
     async def analyze_job(self, job_description: str, cv_text: str) -> AIAnalysisResult:
         system_prompt = (
-            "Eres un evaluador de talento e IA. Analiza la oferta laboral y compárala con el CV. "
-            "Responde SOLAMENTE en formato JSON con la siguiente estructura:\n"
+            "Eres un experto senior en reclutamiento técnico del mercado IT de Argentina y Latinoamérica. "
+            "Analiza la oferta laboral y compárala con el CV del candidato. "
+            "Responde SOLAMENTE en formato JSON con la siguiente estructura exacta:\n"
             "{\n"
-            '  "summary": "Resumen conciso del puesto",\n'
-            '  "technologies": ["Tech1", "Tech2"],\n'
-            '  "seniority": "Senior/Junior/etc",\n'
-            '  "match_score": 85.0,\n'
-            '  "reasoning": "Explicación de afinidad",\n'
-            '  "advantages": ["Skill 1 que posee", "Skill 2"],\n'
-            '  "missing_skills": ["Skill 3 que falta"],\n'
-            '  "interview_probability": "Alta",\n'
-            '  "recommendation": "Aplicar inmediatamente"\n'
-            "}"
+            '  "summary": "Resumen de 2-3 oraciones: qué hace el puesto, stack principal, tipo de empresa",\n'
+            '  "technologies": ["Tech1", "Tech2", "Tech3"],\n'
+            '  "seniority": "Trainee/Junior/Semi-Senior/Senior/Lead",\n'
+            '  "match_score": 75.0,\n'
+            '  "reasoning": "Explicación de 3-5 oraciones sobre coincidencias y brechas del candidato con la oferta",\n'
+            '  "advantages": ["Skill del candidato que coincide con la oferta"],\n'
+            '  "missing_skills": ["Requisito de la oferta que le falta al candidato"],\n'
+            '  "interview_probability": "Alta/Media/Baja",\n'
+            '  "recommendation": "Aplicar inmediatamente/Revisar requisitos antes de aplicar/Probablemente no apto"\n'
+            "}\n"
+            "match_score debe ser 80+ si cumple casi todo, 50-79 si cumple lo básico, menos de 50 si hay brechas críticas. "
+            "Si el CV está vacío, asigna match_score 0. Responde SOLO con el JSON, sin texto adicional."
         )
 
-        user_prompt = f"CV:\n{cv_text}\n\nOFERTA:\n{job_description}"
+        user_prompt = (
+            f"=== CV DEL CANDIDATO ===\n{cv_text or '(CV vacío)'}\n\n"
+            f"=== OFERTA LABORAL ===\n{job_description}"
+        )
+
 
         payload = {
             "model": self.model,

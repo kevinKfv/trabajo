@@ -1669,30 +1669,313 @@ body {
 .pill-icon { font-size: 1rem; }
 
 /* ══════════════════════════════════════════════════════════════
-   RESPONSIVE — móvil
+   RESPONSIVE — MOBILE FULL OVERHAUL
    ══════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    min-height: auto;
-    position: relative;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
 
-  .sidebar-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 8px;
-  }
-
-  .nav-item { flex: 0 0 auto; }
-
-  .main-content { margin-left: 0; }
-
-  .tab-content { padding: 20px 16px; }
-
-  .jobs-grid { grid-template-columns: 1fr; }
-
-  .topbar { padding: 14px 16px; }
+/* ── Botón hamburguesa (sólo móvil) ───────────────────────── */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 14px; left: 14px;
+  z-index: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  font-size: 1.2rem;
+  width: 40px; height: 40px;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: var(--t);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
+
+.hamburger-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* ── Overlay (fondo oscuro al abrir sidebar en móvil) ──────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 150;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+
+.sidebar-overlay.active { display: block; }
+
+/* ── Bottom Nav Bar (sólo móvil) ───────────────────────────── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--deep);
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  gap: 0;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--t);
+  font-family: 'Space Grotesk', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  position: relative;
+}
+
+.bottom-nav-item .bn-icon { font-size: 1.3rem; line-height: 1; }
+
+.bottom-nav-item.active {
+  color: var(--green);
+}
+
+.bottom-nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--green);
+  border-radius: 0 0 2px 2px;
+  box-shadow: var(--glow-green);
+}
+
+.bottom-nav-badge {
+  position: absolute;
+  top: 4px; right: calc(50% - 14px);
+  background: var(--green);
+  color: var(--black);
+  font-size: 0.55rem;
+  font-weight: 700;
+  min-width: 16px; height: 16px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── TABLET (max 1024px) ────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .jobs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* ── MOBILE (max 768px) ─────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* ── Layout base ── */
+  .hamburger-btn { display: flex; }
+  .bottom-nav { display: flex; }
+
+  .app-container { flex-direction: column; }
+
+  /* ── Sidebar: drawer lateral ── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    flex-direction: column;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 30px rgba(0,0,0,0.6);
+  }
+
+  /* ── Main content ── */
+  .main-content {
+    margin-left: 0;
+    min-height: 100vh;
+    padding-bottom: 70px; /* espacio para bottom nav */
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    padding: 14px 16px 14px 62px; /* deja espacio para hamburger */
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .topbar-actions > div {
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap;
+  }
+
+  /* ── Tab content ── */
+  .tab-content { padding: 16px 12px; }
+
+  /* ── Stats grid ── */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  .stat-card { padding: 14px 12px; gap: 10px; }
+  .stat-value { font-size: 1.6rem; }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .search-wrapper { min-width: 100%; flex: none; width: 100%; }
+  .filter-select { width: 100%; }
+  .score-filter { flex-direction: row; align-items: center; gap: 10px; }
+  .score-filter input[type="range"] { width: 100%; flex: 1; }
+
+  /* ── Jobs header ── */
+  .jobs-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* ── Jobs grid: 1 columna ── */
+  .jobs-grid { grid-template-columns: 1fr; gap: 10px; }
+
+  .job-card { padding: 14px; }
+
+  .job-card-footer {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .job-card-footer .btn-sm {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    font-size: 0.72rem;
+    padding: 6px 8px;
+  }
+
+  /* ── Perfil layout ── */
+  .profile-layout { grid-template-columns: 1fr; gap: 14px; }
+
+  /* ── Formularios ── */
+  .form-grid { grid-template-columns: 1fr; }
+
+  /* ── Auto apply ── */
+  .apply-config-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .apply-controls { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+
+  /* ── CRM Kanban ── */
+  .kanban-grid {
+    grid-template-columns: 1fr !important;
+    overflow-x: unset;
+  }
+
+  .crm-stats-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .crm-stat-pill { flex: 1; min-width: 120px; }
+
+  /* ── Analytics ── */
+  .analytics-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .analytics-panels-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Chat ── */
+  .chat-suggestions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .suggestion-chip {
+    font-size: 0.75rem;
+    padding: 7px 12px;
+  }
+
+  .chat-shell { border-radius: var(--radius); }
+
+  /* ── Modal ── */
+  .modal-box {
+    width: 95vw !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 5vh auto;
+    border-radius: var(--radius);
+  }
+
+  .modal-body-area { padding: 14px 16px; }
+  .modal-footer-bar { flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
+  .modal-footer-bar .btn { flex: 1; min-width: 120px; justify-content: center; }
+
+  /* Score ring: esconder en móvil para ahorrar espacio */
+  .ai-score-row { flex-direction: column; gap: 10px; }
+  .score-ring { width: 60px; height: 60px; font-size: 0.9rem; }
+
+  /* ── Tables ── */
+  .data-table-wrapper { overflow-x: auto; }
+  .data-table { min-width: 600px; }
+
+  /* ── Pagination ── */
+  .pagination { gap: 8px; }
+  .btn-secondary { padding: 8px 12px; font-size: 0.78rem; }
+
+  /* ── Configs grid ── */
+  .configs-grid { grid-template-columns: 1fr; }
+
+  /* ── Toast ── */
+  .toast {
+    bottom: 80px; /* sobre el bottom nav */
+    right: 12px;
+    left: 12px;
+    max-width: unset;
+  }
+
+  /* ── Topbar stats: ocultar en móvil ── */
+  .topbar-title { font-size: 1rem; }
+  .topbar-subtitle { font-size: 0.72rem; }
+}
+
+/* ── Muy pequeño (max 400px) ────────────────────────────────── */
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-value { font-size: 1.4rem; }
+  .tab-content { padding: 12px 10px; }
+  .analytics-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+  .bottom-nav-item { font-size: 0.52rem; }
+  .bottom-nav-item .bn-icon { font-size: 1.1rem; }
+}
+

@@ -3,7 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#080B14">
     <meta name="description"
         content="Job Hunter AI — Agregador inteligente de empleos con matching por IA y postulación automática">
     <title>Job Hunter AI — Terminal Noir</title>
@@ -16,6 +20,14 @@
 </head>
 
 <body>
+
+    <!-- Botón hamburguesa (sólo visible en móvil) -->
+    <button class="hamburger-btn" id="btn-hamburger" aria-label="Abrir menú">
+        ☰
+    </button>
+
+    <!-- Overlay oscuro del sidebar -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <div class="app-container">
 
@@ -599,6 +611,31 @@
         </main><!-- /main-content -->
 
     </div><!-- /app-container -->
+
+    <!-- Bottom Navigation Bar (sólo visible en móvil) -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="bottom-nav-item active" data-tab="jobs-tab">
+            <span class="bn-icon">💼</span>
+            <span>Empleos</span>
+            <span class="bottom-nav-badge" id="bn-badge-jobs">0</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="search-configs-tab">
+            <span class="bn-icon">⚙️</span>
+            <span>Búsquedas</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="profile-tab">
+            <span class="bn-icon">📄</span>
+            <span>Mi CV</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="chat-tab">
+            <span class="bn-icon">💬</span>
+            <span>Chat IA</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="analytics-tab">
+            <span class="bn-icon">📊</span>
+            <span>Stats</span>
+        </button>
+    </nav>
 
     <!-- ═══════════════════════════════════════
      MODAL — Detalle de oferta

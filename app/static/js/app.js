@@ -14,12 +14,118 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Estado global de la aplicación frontend
+    // ═══════════════════════════════════════════════════════════
+    // AISLAMIENTO POR DISPOSITIVO (sessionStorage)
+    // Cada sesión de navegador es independiente: los empleos
+    // guardados/descartados y el CV cargado sólo persisten
+    // durante la sesión actual. Al cerrar el navegador o abrir
+    // desde otro dispositivo, empieza limpio.
+    // ═══════════════════════════════════════════════════════════
+    const SESSION_KEY = "jhAI_session_" + (
+        sessionStorage.getItem("jhAI_deviceId") ||
+        (() => {
+            const id = "dev_" + Math.random().toString(36).slice(2, 10);
+            sessionStorage.setItem("jhAI_deviceId", id);
+            return id;
+        })()
+    );
+
+    // Cache de vista local (no persiste entre sesiones/dispositivos)
+    let sessionViewedJobs = JSON.parse(sessionStorage.getItem(SESSION_KEY + "_viewed") || "[]");
+    let sessionHiddenJobs = JSON.parse(sessionStorage.getItem(SESSION_KEY + "_hidden") || "[]");
+
+    function markJobViewed(jobId) {
+        if (!sessionViewedJobs.includes(jobId)) {
+            sessionViewedJobs.push(jobId);
+            sessionStorage.setItem(SESSION_KEY + "_viewed", JSON.stringify(sessionViewedJobs));
+        }
+    }
+
+    function hideJobLocally(jobId) {
+        if (!sessionHiddenJobs.includes(jobId)) {
+            sessionHiddenJobs.push(jobId);
+            sessionStorage.setItem(SESSION_KEY + "_hidden", JSON.stringify(sessionHiddenJobs));
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // HAMBURGER MENU & SIDEBAR DRAWER (móvil)
+    // ═══════════════════════════════════════════════════════════
+    const hamburgerBtn = document.getElementById("btn-hamburger");
+    const sidebarEl = document.querySelector(".sidebar");
+    const sidebarOverlay = document.getElementById("sidebar-overlay");
+
+    function openSidebar() {
+        sidebarEl.classList.add("open");
+        sidebarOverlay.classList.add("active");
+        hamburgerBtn.textContent = "✕";
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeSidebar() {
+        sidebarEl.classList.remove("open");
+        sidebarOverlay.classList.remove("active");
+        hamburgerBtn.textContent = "☰";
+        document.body.style.overflow = "";
+    }
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener("click", () => {
+            sidebarEl.classList.contains("open") ? closeSidebar() : openSidebar();
+        });
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeSidebar);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // BOTTOM NAV — sincronizado con el sidebar nav
+    // ═══════════════════════════════════════════════════════════
+    const bottomNavItems = document.querySelectorAll(".bottom-nav-item[data-tab]");
+
+    function switchTab(targetTab) {
+        // Actualizar sidebar nav
+        document.querySelectorAll(".nav-item[data-tab]").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        const sidebarBtn = document.querySelector(`.nav-item[data-tab="${targetTab}"]`);
+        if (sidebarBtn) sidebarBtn.classList.add("active");
+        const tabEl = document.getElementById(targetTab);
+        if (tabEl) tabEl.classList.add("active");
+
+        // Actualizar bottom nav
+        bottomNavItems.forEach(b => b.classList.remove("active"));
+        const bnBtn = document.querySelector(`.bottom-nav-item[data-tab="${targetTab}"]`);
+        if (bnBtn) bnBtn.classList.add("active");
+
+        // Actualizar topbar
+        if (TAB_META[targetTab] && topbarTitle && topbarSub) {
+            topbarTitle.innerHTML = TAB_META[targetTab].title;
+            topbarSub.textContent = TAB_META[targetTab].sub;
+        }
+
+        // Cerrar sidebar si estamos en móvil
+        if (window.innerWidth <= 768) closeSidebar();
+
+        // Cargar datos de la pestaña
+        if (targetTab === "search-configs-tab") loadSearchConfigs();
+        if (targetTab === "profile-tab") loadUserProfile();
+        if (targetTab === "auto-apply-tab") loadApplyLogs();
+        if (targetTab === "crm-tab") loadKanbanBoard();
+        if (targetTab === "analytics-tab") loadAnalyticsTab();
+    }
+
+    bottomNavItems.forEach(btn => {
+        btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab")));
+    });
+
+
     let currentPage = 1;
     let currentLimit = 12;
     let currentJobs = [];
     let searchTimeout = null;
     let selectedJobForApply = null;
+
 
     // Referencias DOM principales
     const grid = document.getElementById("jobs-grid");
@@ -72,38 +178,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnAI = document.getElementById("btn-trigger-ai");
     const btnNotify = document.getElementById("btn-trigger-notify");
 
-    // --- Navegación entre Pestañas ---
+    // --- Navegación entre Pestañas (sidebar) ---
     const tabButtons = document.querySelectorAll(".nav-item[data-tab]");
     const tabContents = document.querySelectorAll(".tab-content");
 
     tabButtons.forEach(btn => {
         btn.addEventListener("click", () => {
-            tabButtons.forEach(b => b.classList.remove("active"));
-            tabContents.forEach(c => c.classList.remove("active"));
-
-            btn.classList.add("active");
-            const targetTab = btn.getAttribute("data-tab");
-            document.getElementById(targetTab).classList.add("active");
-
-            // Actualizar topbar contextual
-            if (TAB_META[targetTab] && topbarTitle && topbarSub) {
-                topbarTitle.innerHTML = TAB_META[targetTab].title;
-                topbarSub.textContent = TAB_META[targetTab].sub;
-            }
-
-            if (targetTab === "search-configs-tab") loadSearchConfigs();
-            if (targetTab === "profile-tab") loadUserProfile();
-            if (targetTab === "auto-apply-tab") loadApplyLogs();
-            if (targetTab === "crm-tab") loadKanbanBoard();
-            if (targetTab === "analytics-tab") loadAnalyticsTab();
+            switchTab(btn.getAttribute("data-tab"));
         });
     });
+
 
     // --- Exponer función del chat para sugerencias rápidas ---
     window.askChatQuestion = function(question) {
         const chatInput = document.getElementById("chat-input");
-        const chatTab = document.querySelector('[data-tab="chat-tab"]');
-        if (chatTab) chatTab.click();
+        switchTab("chat-tab");
         setTimeout(() => {
             if (chatInput) {
                 chatInput.value = question;
@@ -111,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }, 200);
     };
+
 
     // --- Cargar Estadísticas ---
     async function loadStats() {
@@ -132,9 +222,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (kpiRemoteJobs) kpiRemoteJobs.textContent = remote;
                 if (kpiHighMatch) kpiHighMatch.textContent = highMatch;
 
-                // Badge sidebar
+                // Badge sidebar + bottom nav
                 const navBadge = document.getElementById("nav-badge-jobs");
                 if (navBadge) navBadge.textContent = total;
+                const bnBadge = document.getElementById("bn-badge-jobs");
+                if (bnBadge) bnBadge.textContent = total > 0 ? total : "";
             }
         } catch (e) {
             console.error("Error al cargar estadísticas:", e);
