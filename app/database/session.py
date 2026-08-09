@@ -40,7 +40,8 @@ def _auto_migrate_columns(sync_conn):
             "currency": "VARCHAR DEFAULT 'ARS'",
             "frequency_hours": "INTEGER DEFAULT 2",
             "date_filter": "VARCHAR DEFAULT 'all'",
-            "target_cv_version_id": "INTEGER"
+            "target_cv_version_id": "INTEGER",
+            "device_id": "VARCHAR DEFAULT 'global'"
         },
         "jobs": {
             "technologies": "JSON DEFAULT '[]'",
@@ -48,13 +49,15 @@ def _auto_migrate_columns(sync_conn):
             "source": "VARCHAR DEFAULT 'linkedin'",
             "status": "VARCHAR DEFAULT 'NEW'",
             "ai_score": "FLOAT",
-            "ai_analysis": "JSON"
+            "ai_analysis": "JSON",
+            "device_id": "VARCHAR DEFAULT 'global'"
         },
         "user_profiles": {
             "cv_skills": "JSON DEFAULT '[]'",
             "cv_filename": "VARCHAR",
             "cv_file_path": "VARCHAR",
-            "cv_text": "TEXT"
+            "cv_text": "TEXT",
+            "device_id": "VARCHAR DEFAULT 'global'"
         }
     }
 
