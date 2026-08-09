@@ -920,10 +920,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function formatMarkdown(text) {
         if (!text) return "";
-        return text
+        let html = text
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
+            .replace(/>/g, "&gt;");
+
+        // Convertir enlaces markdown [Texto](url)
+        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:underline; font-weight:600;">$1 🔗</a>');
+
+        // Convertir URLs directas que no estén ya dentro de un href
+        html = html.replace(/(^|[\s\n])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:underline;">$2 🔗</a>');
+
+        return html
             .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
             .replace(/\*(.*?)\*/g, "<em>$1</em>")
             .replace(/`([^`]+)`/g, "<code>$1</code>")

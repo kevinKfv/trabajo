@@ -33,8 +33,8 @@ class ChatAssistantService:
         profile = profile_res.scalar_one_or_none()
 
         job_summaries = [
-            f"- {j.title} en {j.company} ({j.source.upper()}, Match: {j.ai_score or 0}%, Ubicación: {j.location or 'Remoto'})"
-            for j in jobs[:15]
+            f"- {j.title} en {j.company} ({j.source.upper()}, Match: {j.ai_score or 0}%, Ubicación: {j.location or 'Remoto'}) | URL/Link de postulación: {j.url}"
+            for j in jobs[:20]
         ]
         context_str = "\n".join(job_summaries) if job_summaries else "Sin empleos en la base de datos."
 
@@ -47,13 +47,14 @@ class ChatAssistantService:
             "1. Responde directamente y amablemente a la consulta del usuario.\n"
             "2. Usa formato Markdown limpio (negritas, listas con viñetas, emojis) para que sea visualmente atractivo.\n"
             "3. Si te pide empleos o recomendaciones, analiza las mejores opciones disponibles de la lista y destaca sus puntos fuertes.\n"
-            "4. Sé profesional, entusiasta y conciso."
+            "4. Si el usuario te pide links, enlaces o URLs para postularse, inclúyelos en tu respuesta usando el formato Markdown [Postularme a Título](URL) o indicando la URL directamente.\n"
+            "5. Sé profesional, entusiasta y conciso."
         )
 
         user_prompt = (
             f"CONSULTA DEL USUARIO: '{query}'\n\n"
             f"PERFIL / CV DEL CANDIDATO:\n{cv_summary[:1000]}\n\n"
-            f"OFERTAS LABORAL DISPONIBLES EN SU CUENTA:\n{context_str}"
+            f"OFERTAS LABORAL DISPONIBLES EN SU CUENTA CON SUS LINKS DE POSTULACIÓN:\n{context_str}"
         )
 
         try:
