@@ -170,3 +170,32 @@ class OpenAIProvider(BaseAIProvider):
         except Exception as e:
             logger.error(f"Error extrayendo skills con IA ({self.endpoint}): {e}")
             return []
+
+    async def chat_response(self, system_prompt: str, user_prompt: str) -> str:
+        if not self.api_key:
+            return "No hay clave de API configurada para el proveedor de IA."
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "temperature": 0.5
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(self.endpoint, json=payload, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"Error en chat_response ({self.endpoint}): {e}", exc_info=True)
+            return "Lo siento, ocurrió un problema técnico al procesar tu consulta con la IA."
+

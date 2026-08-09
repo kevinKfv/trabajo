@@ -120,3 +120,24 @@ class OllamaProvider(BaseAIProvider):
         except Exception as e:
             logger.error(f"Error extrayendo skills con Ollama: {e}")
             return []
+
+    async def chat_response(self, system_prompt: str, user_prompt: str) -> str:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "stream": False
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(self.endpoint, json=payload)
+                response.raise_for_status()
+                data = response.json()
+                return data.get("message", {}).get("content", "Sin respuesta de Ollama.")
+        except Exception as e:
+            logger.error(f"Error en chat_response con Ollama: {e}")
+            return "Ocurrió un error al consultar Ollama local."
+

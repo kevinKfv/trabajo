@@ -21,36 +21,87 @@ class ChatAssistantService:
         logger.info(f"Procesando consulta de Chat IA: '{query}'")
 
         # 1. Obtener contexto de empleos y perfil
-        jobs_res = await self.db.execute(select(Job).where(Job.device_id == device_id).limit(20))
+        jobs_res = await self.db.execute(
+            select(Job)
+            .where(Job.device_id == device_id)
+            .order_by(Job.ai_score.desc().nullslast(), Job.id.desc())
+            .limit(30)
+        )
         jobs = jobs_res.scalars().all()
 
         profile_res = await self.db.execute(select(UserProfile).where(UserProfile.device_id == device_id).limit(1))
         profile = profile_res.scalar_one_or_none()
 
-        job_summaries = [f"- {j.title} en {j.company} ({j.source.upper()}, Match: {j.ai_score or 0}%, {j.location or 'Remoto'})" for j in jobs[:10]]
+        job_summaries = [
+            f"- {j.title} en {j.company} ({j.source.upper()}, Match: {j.ai_score or 0}%, Ubicación: {j.location or 'Remoto'})"
+            for j in jobs[:15]
+        ]
         context_str = "\n".join(job_summaries) if job_summaries else "Sin empleos en la base de datos."
 
-        prompt_context = f"Responde a la siguiente consulta sobre las ofertas de trabajo disponibles:\n\nCONSULTA: '{query}'\n\nOFFERTAS DISPONIBLES:\n{context_str}"
+        cv_summary = profile.cv_text if (profile and profile.cv_text) else "Perfil de desarrollador de software sin CV detallado."
+
+        system_prompt = (
+            "Eres el Asistente Conversacional Inteligente de Job Hunter AI.\n"
+            "Tu misión es ayudar al candidato con orientación profesional y recomendaciones sobre las ofertas laborales disponibles en su cuenta.\n"
+            "REGLAS:\n"
+            "1. Responde directamente y amablemente a la consulta del usuario.\n"
+            "2. Usa formato Markdown limpio (negritas, listas con viñetas, emojis) para que sea visualmente atractivo.\n"
+            "3. Si te pide empleos o recomendaciones, analiza las mejores opciones disponibles de la lista y destaca sus puntos fuertes.\n"
+            "4. Sé profesional, entusiasta y conciso."
+        )
+
+        user_prompt = (
+            f"CONSULTA DEL USUARIO: '{query}'\n\n"
+            f"PERFIL / CV DEL CANDIDATO:\n{cv_summary[:1000]}\n\n"
+            f"OFERTAS LABORAL DISPONIBLES EN SU CUENTA:\n{context_str}"
+        )
 
         try:
-            ai_res = await self.ai_provider.analyze_job(
-                job_description=prompt_context,
-                cv_text=profile.cv_text if (profile and profile.cv_text) else "Desarrollador de Software"
+            answer_text = await self.ai_provider.chat_response(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt
             )
 
-            # Generar respuesta amigable
-            answer = f"🤖 **Respuesta del Asistente IA**:\n\n{ai_res.summary}\n\n💡 **Recomendación**: {ai_res.recommendation}.\n\n📌 **Ofertas Relevantes**:\n{context_str}"
+            # Para todas las consultas sobre empleos o lista de ofertas, adjuntar datos estructurados para renderizar botones de postulación
+            suggested_jobs = [
+                {
+                    "id": j.id,
+                    "title": j.title,
+                    "company": j.company,
+                    "location": j.location or "Remoto",
+                    "url": j.url,
+                    "source": j.source,
+                    "ai_score": j.ai_score,
+                    "remote": j.remote,
+                    "seniority": j.seniority or "N/A"
+                }
+                for j in jobs[:6]
+            ]
 
             return {
                 "query": query,
-                "answer": answer,
-                "suggested_jobs": [j.title for j in jobs[:3]]
+                "answer": answer_text,
+                "suggested_jobs": suggested_jobs
             }
 
         except Exception as e:
-            logger.error(f"Error en Chat Assistant: {e}")
+            logger.error(f"Error en Chat Assistant: {e}", exc_info=True)
             return {
                 "query": query,
-                "answer": f"🤖 Encontré **{len(jobs)} ofertas** registradas en el sistema. Puedes explorarlas en la pestaña 'Empleos & Feed'.",
-                "suggested_jobs": []
+                "answer": f"🤖 Encontré **{len(jobs)} ofertas** registradas en el sistema. Puedes explorarlas a continuación o en la pestaña 'Empleos & Feed'.",
+                "suggested_jobs": [
+                    {
+                        "id": j.id,
+                        "title": j.title,
+                        "company": j.company,
+                        "location": j.location or "Remoto",
+                        "url": j.url,
+                        "source": j.source,
+                        "ai_score": j.ai_score,
+                        "remote": j.remote,
+                        "seniority": j.seniority or "N/A"
+                    }
+                    for j in jobs[:3]
+                ]
             }
+

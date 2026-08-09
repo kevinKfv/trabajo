@@ -27,3 +27,8 @@ class BaseAIProvider(ABC):
     async def extract_cv_skills(self, cv_text: str) -> list[str]:
         """Extrae la lista de habilidades técnicas y blandas desde el texto de un CV."""
         pass
+
+    @abstractmethod
+    async def chat_response(self, system_prompt: str, user_prompt: str) -> str:
+        """Genera una respuesta conversacional en formato texto para el chat assistant."""
+        pass
