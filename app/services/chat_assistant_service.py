@@ -15,16 +15,16 @@ class ChatAssistantService:
         self.db = db
         self.ai_provider = AIFactory.get_provider()
 
-    async def answer_user_query(self, query: str) -> Dict[str, Any]:
+    async def answer_user_query(self, query: str, device_id: str = "global") -> Dict[str, Any]:
         """Procesa una pregunta del usuario y retorna una respuesta relevante y estructurada."""
         query_lower = query.lower()
         logger.info(f"Procesando consulta de Chat IA: '{query}'")
 
         # 1. Obtener contexto de empleos y perfil
-        jobs_res = await self.db.execute(select(Job).limit(20))
+        jobs_res = await self.db.execute(select(Job).where(Job.device_id == device_id).limit(20))
         jobs = jobs_res.scalars().all()
 
-        profile_res = await self.db.execute(select(UserProfile).limit(1))
+        profile_res = await self.db.execute(select(UserProfile).where(UserProfile.device_id == device_id).limit(1))
         profile = profile_res.scalar_one_or_none()
 
         job_summaries = [f"- {j.title} en {j.company} ({j.source.upper()}, Match: {j.ai_score or 0}%, {j.location or 'Remoto'})" for j in jobs[:10]]

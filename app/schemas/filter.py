@@ -14,6 +14,7 @@ class JobFilter(BaseModel):
     status: Optional[JobStatus] = Field(None, description="Filtrar por estado del trabajo")
     search_query: Optional[str] = Field(None, description="Búsqueda por texto en título o descripción")
     date_filter: Optional[str] = Field(None, description="Filtro de fecha: today, week, all")
+    device_id: Optional[str] = Field("global", description="Device ID para aislar datos")
 
     page: int = Field(1, ge=1, description="Número de página")
     limit: int = Field(20, ge=1, le=100, description="Cantidad por página")

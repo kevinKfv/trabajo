@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 from typing import Any, Optional
-from sqlalchemy import String, Text, Boolean, Integer, Float, JSON, Enum, Index
+from sqlalchemy import String, Text, Boolean, Integer, Float, JSON, Enum, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database.base import Base
 
@@ -27,7 +27,8 @@ class Job(Base):
     seniority: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     technologies: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
-    url: Mapped[str] = mapped_column(String(1024), nullable=False, unique=True, index=True)
+    url: Mapped[str] = mapped_column(String(1024), nullable=False, index=True)
+    device_id: Mapped[str] = mapped_column(String(50), nullable=False, default="global", index=True)
     published_date: Mapped[Optional[datetime]] = mapped_column(String(100), nullable=True)
     source: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     
@@ -43,4 +44,5 @@ class Job(Base):
 
     __table_args__ = (
         Index("idx_title_company", "title", "company"),
+        UniqueConstraint("url", "device_id", name="uq_job_url_device"),
     )

@@ -9,6 +9,7 @@ class SearchConfig(Base):
     __tablename__ = "search_configs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    device_id: Mapped[str] = mapped_column(String(50), nullable=False, default="global", index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     keywords: Mapped[List[str]] = mapped_column(JSON, default=list, nullable=False)
     sources: Mapped[List[str]] = mapped_column(JSON, default=list, nullable=False)  # linkedin, bumeran, computrabajo

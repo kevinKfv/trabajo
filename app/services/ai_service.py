@@ -44,10 +44,10 @@ class AIService:
         self.cv_text = cv_text
         self.ai_provider = AIFactory.get_provider()
 
-    async def _get_active_cv_text(self) -> str:
+    async def _get_active_cv_text(self, device_id: str = "global") -> str:
         if self.cv_text:
             return self.cv_text
-        result = await self.db.execute(select(UserProfile).limit(1))
+        result = await self.db.execute(select(UserProfile).where(UserProfile.device_id == device_id).limit(1))
         profile = result.scalar_one_or_none()
         if profile and profile.cv_text and profile.cv_text.strip():
             return profile.cv_text
@@ -62,9 +62,9 @@ class AIService:
         if not job:
             return None
 
-        logger.info(f"Analizando oferta ID {job.id}: '{job.title}' @ '{job.company}'")
+        logger.info(f"Analizando oferta ID {job.id}: '{job.title}' @ '{job.company}' (Device: {job.device_id})")
 
-        active_cv = await self._get_active_cv_text()
+        active_cv = await self._get_active_cv_text(device_id=job.device_id)
         analysis_result = await self.ai_provider.analyze_job(
             job_description=f"Título: {job.title}\nEmpresa: {job.company}\nDescripción: {job.description}\nTecnologías: {', '.join(job.technologies)}",
             cv_text=active_cv
@@ -87,10 +87,10 @@ class AIService:
         await self.db.refresh(job)
         return job
 
-    async def analyze_pending_jobs(self, limit: int = 10) -> Dict[str, Any]:
+    async def analyze_pending_jobs(self, limit: int = 10, device_id: str = "global") -> Dict[str, Any]:
         """Analiza en lote los empleos con estado NEW."""
         result = await self.db.execute(
-            select(Job).where(Job.status == JobStatus.NEW).limit(limit)
+            select(Job).where(Job.status == JobStatus.NEW, Job.device_id == device_id).limit(limit)
         )
         pending_jobs = result.scalars().all()
 

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.session import get_db
 from app.schemas.job import JobResponse, JobStatsResponse, JobCreate
@@ -24,6 +24,7 @@ async def get_jobs(
     status_filter: JobStatus = Query(None, alias="status", description="Estado del empleo"),
     min_ai_score: float = Query(None, ge=0, le=100, description="Puntaje mínimo IA"),
     date_filter: str = Query(None, description="Filtro de fechas (today, week)"),
+    x_device_id: str = Header(default="global", alias="X-Device-ID"),
     job_service: JobService = Depends(get_job_service)
 ):
     """Obtiene la lista paginada de ofertas laborales con filtros aplicables."""
@@ -37,7 +38,8 @@ async def get_jobs(
         source=source,
         status=status_filter,
         min_ai_score=min_ai_score,
-        date_filter=date_filter
+        date_filter=date_filter,
+        device_id=x_device_id
     )
 
     jobs, total = await job_service.filter_jobs(filters)
@@ -53,10 +55,11 @@ async def get_jobs(
 
 @router.get("/stats", response_model=JobStatsResponse)
 async def get_job_stats(
+    x_device_id: str = Header(default="global", alias="X-Device-ID"),
     job_service: JobService = Depends(get_job_service)
 ):
     """Retorna métricas y estadísticas consolidadas sobre las ofertas almacenadas."""
-    return await job_service.get_stats()
+    return await job_service.get_stats(device_id=x_device_id)
 
 
 @router.get("/search", response_model=dict)
@@ -64,10 +67,11 @@ async def search_jobs(
     q: str = Query(..., min_length=2, description="Término de búsqueda"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
+    x_device_id: str = Header(default="global", alias="X-Device-ID"),
     job_service: JobService = Depends(get_job_service)
 ):
     """Búsqueda libre por texto en título, empresa o descripción."""
-    filters = JobFilter(search_query=q, page=page, limit=limit)
+    filters = JobFilter(search_query=q, page=page, limit=limit, device_id=x_device_id)
     jobs, total = await job_service.filter_jobs(filters)
 
     return {
@@ -97,10 +101,11 @@ async def get_job_by_id(
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
 async def create_job(
     job_in: JobCreate,
+    x_device_id: str = Header(default="global", alias="X-Device-ID"),
     job_service: JobService = Depends(get_job_service)
 ):
     """Crea una oferta de empleo manualmente (o mediante webhook). Deduplica automáticamente."""
-    job, created = await job_service.save_job(job_in)
+    job, created = await job_service.save_job(job_in, device_id=x_device_id)
     if not created and job:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -132,11 +137,12 @@ async def analyze_job_by_id(
 
 @router.delete("/all", response_model=dict)
 async def delete_all_jobs(
+    x_device_id: str = Header(default="global", alias="X-Device-ID"),
     db: AsyncSession = Depends(get_db)
 ):
     """Elimina todas las ofertas laborales scrapeadas del feed."""
     from sqlalchemy import delete
     from app.models.job import Job
-    await db.execute(delete(Job))
+    await db.execute(delete(Job).where(Job.device_id == x_device_id))
     await db.commit()
     return {"message": "Todas las ofertas han sido eliminadas."}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,8 +15,9 @@ class ChatQueryRequest(BaseModel):
 @router.post("/query")
 async def process_chat_query(
     req: ChatQueryRequest,
+    x_device_id: str = Header(default="global", alias="X-Device-ID"),
     db: AsyncSession = Depends(get_db)
 ):
     """Procesa una consulta en lenguaje natural mediante el Asistente de IA Conversacional."""
     service = ChatAssistantService(db)
-    return await service.answer_user_query(req.query)
+    return await service.answer_user_query(req.query, device_id=x_device_id)

@@ -8,6 +8,7 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    device_id: Mapped[str] = mapped_column(String(50), nullable=False, default="global", unique=True, index=True)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Candidato")
     email: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     phone: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

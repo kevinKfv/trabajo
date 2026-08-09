@@ -16,33 +16,34 @@ class JobService:
         result = await self.db.execute(select(Job).where(Job.id == job_id))
         return result.scalar_one_or_none()
 
-    async def get_by_url(self, url: str) -> Optional[Job]:
-        """Busca si una oferta laboral ya existe en la BD por su URL."""
-        result = await self.db.execute(select(Job).where(Job.url == url))
+    async def get_by_url(self, url: str, device_id: str = "global") -> Optional[Job]:
+        """Busca si una oferta laboral ya existe en la BD por su URL y dispositivo."""
+        result = await self.db.execute(select(Job).where(Job.url == url, Job.device_id == device_id))
         return result.scalar_one_or_none()
 
-    async def get_by_title_and_company(self, title: str, company: str) -> Optional[Job]:
-        """Busca si existe una oferta con el mismo título y empresa."""
+    async def get_by_title_and_company(self, title: str, company: str, device_id: str = "global") -> Optional[Job]:
+        """Busca si existe una oferta con el mismo título y empresa para este dispositivo."""
         result = await self.db.execute(
             select(Job).where(
                 and_(
                     func.lower(Job.title) == title.lower(),
-                    func.lower(Job.company) == company.lower()
+                    func.lower(Job.company) == company.lower(),
+                    Job.device_id == device_id
                 )
             )
         )
         return result.scalar_one_or_none()
 
-    async def save_job(self, job_in: JobCreate) -> Tuple[Optional[Job], bool]:
+    async def save_job(self, job_in: JobCreate, device_id: str = "global") -> Tuple[Optional[Job], bool]:
         """Guarda un trabajo eliminando duplicados. Retorna (Job, creado: bool)."""
         # 1. Verificar duplicado por URL
-        existing_job = await self.get_by_url(job_in.url)
+        existing_job = await self.get_by_url(job_in.url, device_id)
         if existing_job:
             logger.debug(f"Job omitido por URL duplicada: {job_in.url}")
             return existing_job, False
 
         # 2. Verificar duplicado por Título + Empresa
-        existing_job = await self.get_by_title_and_company(job_in.title, job_in.company)
+        existing_job = await self.get_by_title_and_company(job_in.title, job_in.company, device_id)
         if existing_job:
             logger.debug(f"Job omitido por Título y Empresa duplicada: {job_in.title} @ {job_in.company}")
             return existing_job, False
@@ -60,7 +61,8 @@ class JobService:
             url=job_in.url,
             published_date=job_in.published_date,
             source=job_in.source,
-            status=JobStatus.NEW
+            status=JobStatus.NEW,
+            device_id=device_id
         )
 
         self.db.add(new_job)
@@ -68,11 +70,11 @@ class JobService:
         await self.db.refresh(new_job)
         return new_job, True
 
-    async def bulk_save_jobs(self, jobs_in: List[JobCreate]) -> Tuple[int, int]:
+    async def bulk_save_jobs(self, jobs_in: List[JobCreate], device_id: str = "global") -> Tuple[int, int]:
         """Guarda un lote de trabajos omitiendo duplicados. Retorna (total_recibidos, total_creados)."""
         created_count = 0
         for job_in in jobs_in:
-            _, created = await self.save_job(job_in)
+            _, created = await self.save_job(job_in, device_id)
             if created:
                 created_count += 1
         return len(jobs_in), created_count
@@ -82,7 +84,7 @@ class JobService:
         query = select(Job)
         count_query = select(func.count(Job.id))
 
-        conditions = []
+        conditions = [Job.device_id == filters.device_id]
 
         if filters.remote is not None:
             conditions.append(Job.remote == filters.remote)
@@ -139,23 +141,23 @@ class JobService:
 
         return list(jobs), total
 
-    async def get_stats(self) -> JobStatsResponse:
+    async def get_stats(self, device_id: str = "global") -> JobStatsResponse:
         """Calcula estadísticas generales de las ofertas almacenadas."""
-        total_res = await self.db.execute(select(func.count(Job.id)))
+        total_res = await self.db.execute(select(func.count(Job.id)).where(Job.device_id == device_id))
         total_jobs = total_res.scalar_one() or 0
 
-        remote_res = await self.db.execute(select(func.count(Job.id)).where(Job.remote == True))
+        remote_res = await self.db.execute(select(func.count(Job.id)).where(Job.remote == True, Job.device_id == device_id))
         remote_jobs_count = remote_res.scalar_one() or 0
 
-        high_match_res = await self.db.execute(select(func.count(Job.id)).where(Job.ai_score >= 80.0))
+        high_match_res = await self.db.execute(select(func.count(Job.id)).where(Job.ai_score >= 80.0, Job.device_id == device_id))
         high_match_jobs_count = high_match_res.scalar_one() or 0
 
         # Conteo por fuente
-        source_res = await self.db.execute(select(Job.source, func.count(Job.id)).group_by(Job.source))
+        source_res = await self.db.execute(select(Job.source, func.count(Job.id)).where(Job.device_id == device_id).group_by(Job.source))
         jobs_by_source = {source: count for source, count in source_res.all()}
 
         # Conteo por estado
-        status_res = await self.db.execute(select(Job.status, func.count(Job.id)).group_by(Job.status))
+        status_res = await self.db.execute(select(Job.status, func.count(Job.id)).where(Job.device_id == device_id).group_by(Job.status))
         jobs_by_status = {status.value if hasattr(status, 'value') else str(status): count for status, count in status_res.all()}
 
         return JobStatsResponse(

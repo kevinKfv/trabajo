@@ -12,16 +12,16 @@ class OpenAIProvider(BaseAIProvider):
         self.api_key = api_key or settings.OPENAI_API_KEY
         self.model = model or settings.AI_MODEL
         
-        # Detección automática de Groq (claves que inician con gsk_) o URL personalizada
+        # Detección automática de Groq o URL personalizada
         custom_url = base_url or settings.OPENAI_BASE_URL
         if custom_url:
             base = custom_url.rstrip("/")
             self.endpoint = f"{base}/chat/completions" if not base.endswith("/chat/completions") else base
-        elif self.api_key.startswith("gsk_"):
+        elif self.api_key.startswith("gsk_") or settings.AI_PROVIDER.lower() == "groq":
             self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
             if self.model in ("gpt-4o-mini", "gpt-4o", ""):
                 self.model = "llama-3.3-70b-versatile"
-            logger.info(f"Clave API de Groq detectada. Usando endpoint de Groq con modelo '{self.model}'.")
+            logger.info(f"Usando endpoint de Groq con modelo '{self.model}'.")
         else:
             self.endpoint = "https://api.openai.com/v1/chat/completions"
 

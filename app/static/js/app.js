@@ -14,6 +14,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    const deviceId = sessionStorage.getItem("jhAI_deviceId") || (() => {
+        const id = "dev_" + Math.random().toString(36).slice(2, 10);
+        sessionStorage.setItem("jhAI_deviceId", id);
+        return id;
+    })();
+
+    // Interceptar fetch para agregar Device-ID en todas las llamadas al API
+    const originalFetch = window.fetch;
+    window.fetch = async function(resource, config) {
+        if (typeof resource === 'string' && resource.startsWith('/api/v1/')) {
+            config = config || {};
+            config.headers = config.headers || {};
+            if (config.headers instanceof Headers) {
+                config.headers.append('X-Device-ID', deviceId);
+            } else {
+                config.headers['X-Device-ID'] = deviceId;
+            }
+        }
+        return originalFetch(resource, config);
+    };
+
     // ═══════════════════════════════════════════════════════════
     // AISLAMIENTO POR DISPOSITIVO (sessionStorage)
     // Cada sesión de navegador es independiente: los empleos
@@ -21,14 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // durante la sesión actual. Al cerrar el navegador o abrir
     // desde otro dispositivo, empieza limpio.
     // ═══════════════════════════════════════════════════════════
-    const SESSION_KEY = "jhAI_session_" + (
-        sessionStorage.getItem("jhAI_deviceId") ||
-        (() => {
-            const id = "dev_" + Math.random().toString(36).slice(2, 10);
-            sessionStorage.setItem("jhAI_deviceId", id);
-            return id;
-        })()
-    );
+    const SESSION_KEY = "jhAI_session_" + deviceId;
 
     // Cache de vista local (no persiste entre sesiones/dispositivos)
     let sessionViewedJobs = JSON.parse(sessionStorage.getItem(SESSION_KEY + "_viewed") || "[]");

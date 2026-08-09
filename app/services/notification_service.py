@@ -17,12 +17,13 @@ class NotificationService:
         self.telegram_provider = TelegramNotificationProvider()
         self.email_provider = EmailNotificationProvider()
 
-    async def notify_high_match_jobs(self, min_score: float = 70.0, limit: int = 10) -> Dict[str, Any]:
+    async def notify_high_match_jobs(self, min_score: float = 70.0, limit: int = 10, device_id: str = "global") -> Dict[str, Any]:
         """Obtiene ofertas con estado ANALYZED y ai_score >= min_score y envía alertas."""
         result = await self.db.execute(
             select(Job)
             .where(Job.status == JobStatus.ANALYZED)
             .where(Job.ai_score >= min_score)
+            .where(Job.device_id == device_id)
             .order_by(Job.ai_score.desc())
             .limit(limit)
         )

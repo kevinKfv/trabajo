@@ -15,6 +15,9 @@ class AIFactory:
         if provider_name == "openai":
             logger.info("Instanciando proveedor de IA: OpenAI")
             return OpenAIProvider()
+        elif provider_name == "groq":
+            logger.info("Instanciando proveedor de IA: Groq")
+            return OpenAIProvider(api_key=settings.GROQ_API_KEY)
         elif provider_name == "ollama":
             logger.info("Instanciando proveedor de IA: Ollama (local)")
             return OllamaProvider()
